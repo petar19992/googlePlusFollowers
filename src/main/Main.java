@@ -1,6 +1,10 @@
 package main;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -17,64 +21,74 @@ import org.apache.log4j.BasicConfigurator;
 import calc.CalcMapper;
 import calc.CalcReducer;
 
-
 public class Main
 {
 
 	public static void main(String[] args)
 	{
+		// BasicConfigurator.configure();
 		String inputFile = args[0];
-	    String calcOutputDir = args[1];
-	    String sortOutputDir = args[2];
-	    
-	    File folder = new File("input/");
-	    File[] listOfFiles = folder.listFiles();
+		String calcOutputDir = args[1];
+		String sortOutputDir = args[2];
 
-	    String[] files=new String[listOfFiles.length];
-	    for (File file : listOfFiles) {
-	        if (file.isFile()) {
-	            System.out.println(file.getName());
-	        }
-	    }
-	    
-	    try
+		File folder = new File("input/");
+		File[] listOfFiles = folder.listFiles();
+		ArrayList<String> names = new ArrayList<>();
+		ArrayList<String> paths = new ArrayList<>();
+		String NAME = "";
+
+		String[] files = new String[listOfFiles.length];
+		for (File file : listOfFiles)
 		{
-	    	runCalcJob(listOfFiles, calcOutputDir);
+			if (file.isFile())
+			{
+				NAME += file.getName().split(".f")[0] + "";
+				names.add(file.getName().split(".f")[0]);
+				paths.add(file.getName());
+				System.out.println(file.getName());
+			}
+		}
+
+		try
+		{
+			 runCalcJob(listOfFiles, calcOutputDir);
 		} catch (Exception e)
 		{
 			// TODO Auto-generated catch block
+			System.out.println("GRESKA 2");
 			e.printStackTrace();
 		}
 		// TODO Auto-generated method stub
 
 	}
-	public static boolean runCalcJob(File[] listOfFiles, String output)
-		      throws Exception {
-		    Configuration conf = new Configuration();
-		    BasicConfigurator.configure();
-		    Job job = new Job(conf);
-		    job.setJarByClass(Main.class);
-		    job.setMapperClass(CalcMapper.class);
-		    job.setReducerClass(CalcReducer.class);
 
-		    job.setInputFormatClass(KeyValueTextInputFormat.class);
+	public static boolean runCalcJob(File[] listOfFiles, String output) throws Exception
+	{
+		Configuration conf = new Configuration();
+		BasicConfigurator.configure();
+		Job job = new Job(conf);
+		job.setJarByClass(Main.class);
+		job.setMapperClass(CalcMapper.class);
+		job.setReducerClass(CalcReducer.class);
 
-		    job.setMapOutputKeyClass(Text.class);
-		    job.setMapOutputValueClass(Text.class);
+		job.setInputFormatClass(KeyValueTextInputFormat.class);
 
-		    Path outputPath = new Path(output);
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(Text.class);
 
-		    for (File file : listOfFiles)
-		    {
-		    	MultipleInputs.addInputPath(job, new Path(file.getPath()),TextInputFormat.class,CalcMapper.class);
-		    }
-		    
-//		    FileInputFormat.setInputPaths(job, input);
-		    FileOutputFormat.setOutputPath(job, outputPath);
+		Path outputPath = new Path(output);
 
-		    outputPath.getFileSystem(conf).delete(outputPath, true);
+		for (File file : listOfFiles)
+		{
+			MultipleInputs.addInputPath(job, new Path(file.getPath()), TextInputFormat.class, CalcMapper.class);
+		}
 
-//		    System.exit(job.waitForCompletion(true) ? 0 : 1);
-		    return job.waitForCompletion(true);
-		  }
+		// FileInputFormat.setInputPaths(job, input);
+		FileOutputFormat.setOutputPath(job, outputPath);
+
+		outputPath.getFileSystem(conf).delete(outputPath, true);
+
+		// System.exit(job.waitForCompletion(true) ? 0 : 1);
+		return job.waitForCompletion(true);
+	}
 }
